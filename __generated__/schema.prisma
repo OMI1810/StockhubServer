@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../__generated__"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userId String @id @default(uuid()) @map("user_id")
+
+  email        String @unique
+  passwordHash String @map("password_hash") @db.VarChar(255)
+
+  isVerified         Boolean @default(false)
+  isTwoFactorEnabled Boolean @default(false) @map("is_two_factor_enabled")
+
+  firstName  String @map("first_name") @db.VarChar(255)
+  middleName String @map("middle_name") @db.VarChar(255)
+  lastName   String @map("last_name") @db.VarChar(255)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  lastLogin DateTime @updatedAt @map("last_login")
+
+  role UserRole @default(REGULAR)
+
+  @@map("users")
+}
+
+model Tokens {
+  id String @id @default(uuid()) @map("id")
+
+  email     String
+  token     String    @unique
+  type      TokenType
+  expiresIn DateTime  @map("expires_in")
+
+  @@map("tokens")
+}
+
+enum UserRole {
+  ADMIN
+  REGULAR
+}
+
+enum TokenType {
+  VERIFICATION
+  PASSWORD_RESET
+  TWO_FACTOR
+}
+
+model Organization {
+  organizationId String @id @default(uuid()) @map("organization_id")
+  name           String @map("name") @db.VarChar(255)
+
+  createdBy String   @map("created_by") // user_id from User table 
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("organizations")
+}
+
+model Organization_Users {
+  organizationId String           @map("organization_id") // organization_id from Organization table
+  userId         String           @map("user_id") // user_id from User table
+  role           OrganizationRole @default(WAREHOUSE_WORKER)
+
+  @@id([organizationId, userId])
+  @@map("organizations_users")
+}
+
+enum OrganizationRole {
+  ADMIN
+  WAREHOUSE_WORKER
+}
+
+model Warehouses {
+  warehouseId    String @id @default(uuid()) @map("warehouse_id")
+  organizationId Int    @map("organization_id") // organization_id from Organization table
+
+  name    String @db.VarChar(255)
+  address String @db.VarChar(255)
+  city    String @db.VarChar(255)
+  state   String @db.VarChar(255)
+  zip     String @db.VarChar(255)
+  country String @db.VarChar(255)
+
+  status WarehouseStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("warehouses")
+}
+
+enum WarehouseStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Products {
+  productId      String @id @default(uuid()) @map("product_id")
+  organizationId String @map("organization_id") // organization_id from Organization table
+
+  name    String @db.VarChar(255)
+  sku     String @db.VarChar(255)
+  barcode String @db.VarChar(255)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("products")
+}
+
+model Nomenclature_Category {
+  categoryId String @id @default(uuid()) @map("category_id")
+  name       String @db.VarChar(255)
+
+  @@map("nomenclature_categories")
+}
+
+model Nomenklatury {
+  nomenclatureId String @id @default(uuid()) @map("nomenclature_id")
+  categoryId     Int    @map("category_id") // category_id from Nomenclature_Category table
+  name           String @db.VarChar(255)
+
+  @@map("nomenklatury")
+}
+
+model Nomenklatury_Products {
+  nomenclatureId String @map("nomenclature_id") // nomenclature_id from Nomenklatury table
+  productId      String @map("product_id") // product_id from Products table
+
+  @@id([nomenclatureId, productId])
+  @@map("nomenklatury_products")
+}
+
+model Documents {
+  documentId String @id @default(uuid()) @map("document_id")
+
+  organizationId String @map("organization_id") // organization_id from Organization table
+  warehouseId    String @map("warehouse_id") // warehouse_id from Warehouses table
+
+  documentStatus String @map("document_status") @db.VarChar(255)
+
+  createdBy String   @map("created_by") // user_id from User table
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("documents")
+}
+
+model Documents_Products {
+  documentProductId String @id @default(uuid()) @map("document_product_id")
+
+  documentId Int @map("document_id") // document_id from Documents table
+  productId  Int @map("product_id") // product_id from Products table
+
+  quantityExpected Int      @map("quantity_expected")
+  quantityChecked  Int      @map("quantity_checked")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("documents_products")
+}
+
+model Devices {
+  deviceId       Int      @id @default(autoincrement()) @map("device_id")
+  organizationId Int      @map("organization_id") // organization_id from Organization table
+  deviceType     String   @map("device_type") @db.VarChar(255)
+  deviceName     String   @map("device_name") @db.VarChar(255)
+  qrToken        String   @map("qr_token") @db.VarChar(255)
+  assignedTo     Int      @map("assigned_to") // user_id from User table
+  lastSynced     DateTime @updatedAt @map("last_synced")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("devices")
+}
+
+model Scan_events {
+  scanEventId   Int      @id @default(autoincrement()) @map("scan_event_id")
+  documentId    Int      @map("document_id") // document_id from Documents table
+  productId     Int      @map("product_id") // product_id from Products table
+  userId        Int      @map("user_id") // user_id from User table
+  deviceId      Int      @map("device_id") // device_id from Devices table
+  quantityDelta Int      @map("quantity_delta")
+  scannedAt     DateTime @default(now()) @map("scanned_at")
+  synced        Boolean  @default(false) @map("synced")
+
+  @@map("scan_events")
+}
+
+model Sync_logs {
+  syncLogId Int      @id @default(autoincrement()) @map("sync_log_id")
+  deviceId  Int      @map("device_id") // device_id from Devices table
+  direction String   @db.VarChar(255)
+  success   Boolean
+  syncTime  DateTime @default(now()) @map("sync_time")
+
+  @@map("sync_logs")
+}

@@ -1,11 +1,12 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../__generated__"
+  provider = "prisma-client-js"
+  output   = "./__generated__"
 }
+
 
 datasource db {
   provider = "postgresql"
-  url      = env("POSTGRES_URL")
+  url      = env("DATABASE_URL")
 }
 
 model User{
@@ -86,11 +87,18 @@ model Warehouses{
   city            String   @db.VarChar(255)
   state           String   @db.VarChar(255)
   zip             String   @db.VarChar(255)
-
   country         String   @db.VarChar(255)
+  
+  status   WarehouseStatus @default(ACTIVE) 
+
   createdAt       DateTime @default(now()) @map("created_at")
 
   @@map("warehouses")
+}
+
+enum WarehouseStatus{
+  ACTIVE
+  INACTIVE
 }
 
 model Products{
