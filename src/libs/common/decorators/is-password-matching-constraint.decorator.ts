@@ -6,7 +6,7 @@ import { RegisterDto } from 'src/auth/dto/register.dto';
 export class IsPasswordMatchingConstraint implements ValidatorConstraintInterface {
     public validate(passwordRepeat: string, args: ValidationArguments) {
         const obj = args.object as RegisterDto;
-        return obj.passwordHash === passwordRepeat;
+        return obj.password === passwordRepeat;
     }
 
     public defaultMessage(validationArguments?: ValidationArguments) {

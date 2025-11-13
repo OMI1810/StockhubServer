@@ -25,7 +25,14 @@ export class UserService {
         return user;
     }
 
-    public async create (email: string, passwordHash: string, firstName: string, lastName: string, middleName: string, isVerified: boolean) {
+    public async create (
+        email: string, 
+        passwordHash: string,
+        firstName: string,
+        lastName: string,
+        middleName: string,
+        isVerified: boolean
+    ){
         const user = await this.prisma.user.create({
             data: {
                 email,

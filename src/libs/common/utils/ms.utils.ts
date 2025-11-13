@@ -53,8 +53,8 @@ export function ms(str: StringValude): number {
             'Value prodided to ms() must be a string with length between 1 and 99.');
     }
 
-    const match = /^(?<value>-?(?:\d+)?\.?\d+) *(?<type>milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)? $/i.exec(
-        str,
+    const match = /^(?<value>-?(?:\d+)?\.?\d+) *(?<type>milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
+        str.trim(),
     );
 
     const groups = match?.groups as { value: string; type?: string } | undefined

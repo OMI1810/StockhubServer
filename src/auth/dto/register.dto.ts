@@ -21,11 +21,11 @@ export class RegisterDto {
     @IsString({ message: 'Пароль должен быть строкой' })
     @IsNotEmpty({ message: 'Пароль не может быть пустым' })
     @MinLength(8, { message: 'Пароль должен быть не менее 8 символов' })
-    passwordHash: string;
+    password: string;
 
     @IsString({ message: 'Подтверждение пароля должен быть строкой' })
     @IsNotEmpty({ message: 'Подтверждение пароля не может быть пустым' })
     @MinLength(8, { message: 'Подтверждение пароля должен быть не менее 8 символов' })
-    @Validate(IsPasswordMatchingConstraint, ['passwordHash'], { message: 'Пароли не совпадают' })
+    @Validate(IsPasswordMatchingConstraint, ['password'], { message: 'Пароли не совпадают' })
     passwordRepeat: string;
 }
