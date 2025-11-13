@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, ConflictException, InternalServerErrorException, NotFoundException, UnauthorizedException, Inject, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RegisterDto } from './dto/register.dto';
 import { UserService } from 'src/user/user.service';
@@ -7,10 +7,16 @@ import { Request } from 'express';
 import { LoginDto } from './dto/login.dto';
 import { hash, verify } from 'argon2';
 import { Response } from 'express';
+import { EmailConfirmationService } from './email-confirmation/email-confirmation.service';
 
 @Injectable()
 export class AuthService {
-    public constructor(private readonly userService: UserService, private readonly configService: ConfigService){}
+    public constructor(
+        private readonly userService: UserService,
+        private readonly configService: ConfigService,
+        @Inject(forwardRef(() => EmailConfirmationService))
+        private readonly emailConfirmationService: EmailConfirmationService
+    ){}
 
     public async register(req: Request, dto: RegisterDto){
         const isExists = await this.userService.findByEmail(dto.email);
@@ -30,7 +36,11 @@ export class AuthService {
             false, // isVerified
         );
 
-        return this.saveSession(req, newUser);
+        await this.emailConfirmationService.sendVerificationToken(newUser);
+
+        return {
+            message: 'Регистрация прошла успешно. На ваш email отправлено письмо для подтверждения.'
+        }
     }
 
     public async login(req: Request, dto: LoginDto){
@@ -44,6 +54,11 @@ export class AuthService {
 
         if (!isPasswordValid) {
             throw new UnauthorizedException('Неверный пароль. Проверьте правильность введенных данных.');
+        }
+
+        if (!user.isVerified) {
+            await this.emailConfirmationService.sendVerificationToken(user);
+            throw new UnauthorizedException('Пользователь не подтвержден. Пожалуйста, подтвердите ваш email.');
         }
 
         return this.saveSession(req, user);
@@ -61,7 +76,7 @@ export class AuthService {
         });
     }
 
-    private async saveSession(req: Request, user: User){
+    public async saveSession(req: Request, user: User){
         return new Promise((resolve, reject) => {
             req.session.userId = user.userId;
             req.session.save((err) => {

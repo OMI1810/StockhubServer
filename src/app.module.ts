@@ -5,6 +5,8 @@ import { IS_DEV_ENV } from './libs/common/utils/is-dev.utils';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { MailModule } from './libs/mail/mail.module';
+import { EmailConfirmationModule } from './auth/email-confirmation/email-confirmation.module';
 
 @Module({
   imports: [
@@ -14,7 +16,9 @@ import { PrismaModule } from './prisma/prisma.module';
     }),
     PrismaModule,
     AuthModule,
-    UserModule
+    UserModule,
+    MailModule,
+    EmailConfirmationModule
   ]
 })
 export class AppModule {}
