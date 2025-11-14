@@ -2,49 +2,214 @@ generator client {
   provider = "prisma-client-js"
 }
 
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model User{
+model User {
   userId             String   @id @default(uuid()) @map("user_id")
-
   email              String   @unique
-  passwordHash       String   @db.VarChar(255) @map("password_hash")
-
+  passwordHash       String   @map("password_hash") @db.VarChar(255)
   isVerified         Boolean  @default(false)
   isTwoFactorEnabled Boolean  @default(false) @map("is_two_factor_enabled")
-
-  firstName          String   @db.VarChar(255) @map("first_name")
-  middleName         String   @db.VarChar(255) @map("middle_name")
-  lastName           String   @db.VarChar(255) @map("last_name")
-
-  createdAt          DateTime @default(now())  @map("created_at")
-  updatedAt          DateTime @updatedAt       @map("updated_at")
-
-  lastLogin          DateTime @updatedAt       @map("last_login")
-
+  firstName          String   @map("first_name") @db.VarChar(255)
+  middleName         String   @map("middle_name") @db.VarChar(255)
+  lastName           String   @map("last_name") @db.VarChar(255)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+  lastLogin          DateTime @updatedAt @map("last_login")
   role               UserRole @default(REGULAR)
-
-  organizations      Organization_Users[] @relation("UserOrganizations")
 
   @@map("users")
 }
 
-model Tokens{
-  id               String    @id @default(uuid()) @map("id")
-
-  email            String 
-  token            String    @unique
-  type             TokenType
-  expiresIn        DateTime  @map("expires_in")
+model Tokens {
+  id        String    @id @default(uuid()) @map("id")
+  email     String
+  token     String    @unique
+  type      TokenType
+  expiresIn DateTime  @map("expires_in")
 
   @@map("tokens")
 }
 
-enum UserRole{
+model Invitations {
+  invitationId  String    @id @default(uuid()) @map("invitation_id")
+  organizationId String   @map("organization_id")
+  email         String
+  firstName     String    @map("first_name") @db.VarChar(255)
+  lastName      String    @map("last_name") @db.VarChar(255)
+  middleName    String    @map("middle_name") @db.VarChar(255)
+  warehouseId   String?   @map("warehouse_id")
+  token         String    @unique
+  expiresIn     DateTime  @map("expires_in")
+  accepted      Boolean   @default(false)
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  organization Organization @relation("OrganizationInvitations", fields: [organizationId], references: [organizationId])
+  warehouse    Warehouses?  @relation("WarehouseInvitations", fields: [warehouseId], references: [warehouseId])
+
+  @@map("invitations")
+}
+
+model Organization {
+  organizationId String   @id @default(uuid()) @map("organization_id")
+  name           String   @map("name") @db.VarChar(255)
+  createdBy      String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  users                  Organization_Users[]    @relation("OrganizationUsers")
+  warehouses             Warehouses[]            @relation("OrganizationWarehouses")
+  nomenclatureCategories Nomenclature_Category[] @relation("OrganizationNomenclatureCategories")
+  nomenclatures          Nomenklatury[]          @relation("OrganizationNomenclatures")
+  invitations            Invitations[]           @relation("OrganizationInvitations")
+
+  @@map("organizations")
+}
+
+model Organization_Users {
+  organizationId String           @map("organization_id")
+  userId         String           @map("user_id")
+  role           OrganizationRole @default(WAREHOUSE_WORKER)
+  warehouseId    String?          @map("warehouse_id")
+
+  organization Organization @relation("OrganizationUsers", fields: [organizationId], references: [organizationId])
+  warehouse    Warehouses?  @relation("WarehouseUsers", fields: [warehouseId], references: [warehouseId])
+
+  @@id([organizationId, userId])
+  @@map("organizations_users")
+}
+
+model Warehouses {
+  warehouseId    String          @id @default(uuid()) @map("warehouse_id")
+  organizationId String          @map("organization_id")
+  name           String          @db.VarChar(255)
+  address        String          @db.VarChar(255)
+  city           String          @db.VarChar(255)
+  state          String          @db.VarChar(255)
+  zip            String          @db.VarChar(255)
+  country        String          @db.VarChar(255)
+  status         WarehouseStatus @default(ACTIVE)
+  createdAt      DateTime        @default(now()) @map("created_at")
+
+  organization Organization         @relation("OrganizationWarehouses", fields: [organizationId], references: [organizationId])
+  users        Organization_Users[] @relation("WarehouseUsers")
+  invitations  Invitations[]        @relation("WarehouseInvitations")
+
+  @@map("warehouses")
+}
+
+model Products {
+  productId      String   @id @default(uuid()) @map("product_id")
+  organizationId String   @map("organization_id")
+  name           String   @db.VarChar(255)
+  sku            String   @db.VarChar(255)
+  barcode        String   @db.VarChar(255)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  nomenclatures Nomenklatury_Products[] @relation("ProductNomenclatures")
+
+  @@map("products")
+}
+
+model Nomenclature_Category {
+  categoryId     String   @id @default(uuid()) @map("category_id")
+  organizationId String   @map("organization_id")
+  name           String   @db.VarChar(255)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization  Organization   @relation("OrganizationNomenclatureCategories", fields: [organizationId], references: [organizationId])
+  nomenclatures Nomenklatury[] @relation("CategoryNomenclatures")
+
+  @@map("nomenclature_categories")
+}
+
+model Nomenklatury {
+  nomenclatureId String   @id @default(uuid()) @map("nomenclature_id")
+  organizationId String   @map("organization_id")
+  categoryId     String   @map("category_id")
+  name           String   @db.VarChar(255)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  organization Organization            @relation("OrganizationNomenclatures", fields: [organizationId], references: [organizationId])
+  category     Nomenclature_Category   @relation("CategoryNomenclatures", fields: [categoryId], references: [categoryId])
+  products     Nomenklatury_Products[] @relation("NomenclatureProducts")
+
+  @@map("nomenklatury")
+}
+
+model Nomenklatury_Products {
+  nomenclatureId String @map("nomenclature_id")
+  productId      String @map("product_id")
+
+  nomenclature Nomenklatury @relation("NomenclatureProducts", fields: [nomenclatureId], references: [nomenclatureId])
+  product      Products     @relation("ProductNomenclatures", fields: [productId], references: [productId])
+
+  @@id([nomenclatureId, productId])
+  @@map("nomenklatury_products")
+}
+
+model Documents {
+  documentId     String   @id @default(uuid()) @map("document_id")
+  organizationId String   @map("organization_id")
+  warehouseId    String   @map("warehouse_id")
+  documentStatus String   @map("document_status") @db.VarChar(255)
+  createdBy      String   @map("created_by")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("documents")
+}
+
+model Documents_Products {
+  documentProductId String   @id @default(uuid()) @map("document_product_id")
+  documentId        Int      @map("document_id")
+  productId         Int      @map("product_id")
+  quantityExpected  Int      @map("quantity_expected")
+  quantityChecked   Int      @map("quantity_checked")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("documents_products")
+}
+
+model Devices {
+  deviceId       Int      @id @default(autoincrement()) @map("device_id")
+  organizationId Int      @map("organization_id")
+  deviceType     String   @map("device_type") @db.VarChar(255)
+  deviceName     String   @map("device_name") @db.VarChar(255)
+  qrToken        String   @map("qr_token") @db.VarChar(255)
+  assignedTo     Int      @map("assigned_to")
+  lastSynced     DateTime @updatedAt @map("last_synced")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("devices")
+}
+
+model Scan_events {
+  scanEventId   Int      @id @default(autoincrement()) @map("scan_event_id")
+  documentId    Int      @map("document_id")
+  productId     Int      @map("product_id")
+  userId        Int      @map("user_id")
+  deviceId      Int      @map("device_id")
+  quantityDelta Int      @map("quantity_delta")
+  scannedAt     DateTime @default(now()) @map("scanned_at")
+  synced        Boolean  @default(false) @map("synced")
+
+  @@map("scan_events")
+}
+
+model Sync_logs {
+  syncLogId Int      @id @default(autoincrement()) @map("sync_log_id")
+  deviceId  Int      @map("device_id")
+  direction String   @db.VarChar(255)
+  success   Boolean
+  syncTime  DateTime @default(now()) @map("sync_time")
+
+  @@map("sync_logs")
+}
+
+enum UserRole {
   ADMIN
   REGULAR
 }
@@ -53,163 +218,15 @@ enum TokenType {
   VERIFICATION
   PASSWORD_RESET
   TWO_FACTOR
+  INVITATION
 }
 
-model Organization{
-  organizationId String    @id @default(uuid()) @map("organization_id")
-  name           String    @db.VarChar(255)     @map("name")
-
-  createdBy      String                         @map("created_by") // user_id from User table 
-
-  users          Organization_Users[]   @relation("OrganizationUsers")
-  warehouses     Warehouses[]          @relation("OrganizationWarehouses")
-
-
-  createdAt      DateTime  @default(now())      @map("created_at")
-
-  @@map("organizations")
-}
-
-model Organization_Users{
-  organizationId String           @map("organization_id") // organization_id from Organization table
-  userId         String           @map("user_id") // user_id from User table
-  role           OrganizationRole 
-
-  organization   Organization @relation("OrganizationUsers", fields: [organizationId], references: [organizationId])
-  user           User         @relation("UserOrganizations", fields: [userId], references: [userId])
-
-  @@id([organizationId, userId])
-  @@map("organizations_users")
-}
-
-enum OrganizationRole{
+enum OrganizationRole {
   ADMIN
   WAREHOUSE_WORKER
 }
 
-model Warehouses{
-  warehouseId     String   @id @default(uuid()) @map("warehouse_id")
-  organizationId  String   @map("organization_id") // organization_id from Organization table
-
-  name            String   @db.VarChar(255)
-  address         String   @db.VarChar(255)
-  city            String   @db.VarChar(255)
-  state           String   @db.VarChar(255)
-  zip             String   @db.VarChar(255)
-  country         String   @db.VarChar(255)
-  
-  status   WarehouseStatus @default(ACTIVE) 
-
-  organization    Organization @relation("OrganizationWarehouses", fields: [organizationId], references: [organizationId])
-
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  @@map("warehouses")
-}
-
-enum WarehouseStatus{
+enum WarehouseStatus {
   ACTIVE
   INACTIVE
-}
-
-model Products{
-  productId       String   @id @default(uuid()) @map("product_id")
-  organizationId  String      @map("organization_id") // organization_id from Organization table
-
-  name            String   @db.VarChar(255)
-  sku             String   @db.VarChar(255)
-  barcode         String   @db.VarChar(255)
-
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  @@map("products")
-}
-
-model Nomenclature_Category{
-  categoryId  String   @id @default(uuid()) @map("category_id")
-  name        String   @db.VarChar(255)
-
-  @@map("nomenclature_categories")
-}
-
-model Nomenklatury{
-  nomenclatureId String   @id @default(uuid()) @map("nomenclature_id")
-  categoryId     String   @map("category_id") // category_id from Nomenclature_Category table
-  name           String   @db.VarChar(255)
-
-  @@map("nomenklatury")
-}
-
-model Nomenklatury_Products{
-  nomenclatureId String      @map("nomenclature_id") // nomenclature_id from Nomenklatury table
-  productId      String      @map("product_id") // product_id from Products table
-
-  @@id([nomenclatureId, productId])
-  @@map("nomenklatury_products")
-}
-
-model Documents{
-  documentId     String   @id @default(uuid()) @map("document_id")
-
-  organizationId String   @map("organization_id") // organization_id from Organization table
-  warehouseId    String   @map("warehouse_id") // warehouse_id from Warehouses table
-
-  documentStatus String   @db.VarChar(255) @map("document_status")
-
-  createdBy      String   @map("created_by") // user_id from User table
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  @@map("documents")
-}
-
-model Documents_Products{
-  documentProductId  String   @id @default(uuid()) @map("document_product_id")
-
-  documentId         String   @map("document_id") // document_id from Documents table
-  productId          String   @map("product_id") // product_id from Products table
-
-  quantityExpected   Int      @map("quantity_expected")
-  quantityChecked    Int      @map("quantity_checked")
-  updatedAt          DateTime @updatedAt @map("updated_at")
-
-  @@map("documents_products")
-}
-
-model Devices{
-  deviceId       String   @id @default(uuid()) @map("device_id")
-  organizationId String   @map("organization_id") // organization_id from Organization table
-
-  deviceType     String   @db.VarChar(255) @map("device_type")
-  deviceName     String   @db.VarChar(255) @map("device_name")
-  qrToken        String   @db.VarChar(255) @map("qr_token")
-  assignedTo     String   @map("assigned_to") // user_id from User table
-  
-  lastSynced     DateTime @updatedAt @map("last_synced")
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  @@map("devices")
-}
-
-model Scan_events{
-  scanEventId    String   @id @default(uuid()) @map("scan_event_id")
-  documentId     String   @map("document_id") // document_id from Documents table
-  productId      String   @map("product_id") // product_id from Products table
-  userId         String   @map("user_id") // user_id from User table
-  deviceId       String   @map("device_id") // device_id from Devices table
-  quantityDelta  Int      @map("quantity_delta")
-  scannedAt      DateTime @default(now()) @map("scanned_at")
-  synced         Boolean  @default(false) @map("synced")
-
-  @@map("scan_events")
-}
-
-model Sync_logs{
-  syncLogId   String   @id @default(uuid()) @map("sync_log_id")
-  deviceId    String   @map("device_id") // device_id from Devices table
-  direction   String   @db.VarChar(255)
-  success     Boolean  
-  syncTime    DateTime @default(now()) @map("sync_time")
-
-  @@map("sync_logs")
 }

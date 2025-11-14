@@ -57,7 +57,7 @@ export class OrganizationService {
             throw new NotFoundException('Организация не найдена. Проверьте правильность указанного ID.');
         }
 
-        const [warehouses, products] = await Promise.all([
+        const [warehouses, products, nomenclatureCategories, nomenclatures] = await Promise.all([
             this.prisma.warehouses.findMany({ 
                 where: { 
                     organizationId: organizationId 
@@ -70,11 +70,23 @@ export class OrganizationService {
                 },
                 take: 1,
             }),
+            this.prisma.nomenclature_Category.findMany({ 
+                where: { 
+                    organizationId: organizationId 
+                },
+                take: 1,
+            }),
+            this.prisma.nomenklatury.findMany({ 
+                where: { 
+                    organizationId: organizationId 
+                },
+                take: 1,
+            }),
         ]);
 
-        if (warehouses.length > 0 || products.length > 0) {
+        if (warehouses.length > 0 || products.length > 0 || nomenclatureCategories.length > 0 || nomenclatures.length > 0) {
             throw new ConflictException(
-                'Невозможно удалить организацию. Сначала удалите все связанные склады и товары.',
+                'Невозможно удалить организацию. Сначала удалите все связанные склады, товары и номенклатуры.',
             );
         }
 
@@ -153,6 +165,41 @@ export class OrganizationService {
             organizationId: organizationUser.organization.organizationId,
             name: organizationUser.organization.name,
             role: organizationUser.role,
+        };
+    }
+
+    /**
+     * Получение статистики организации
+     */
+    public async getStatistics(organizationId: string) {
+        const organization = await this.prisma.organization.findUnique({
+            where: { organizationId },
+        });
+
+        if (!organization) {
+            throw new NotFoundException('Организация не найдена. Проверьте правильность указанного ID.');
+        }
+
+        // Подсчитываем количество складов, сотрудников и товаров параллельно
+        const [warehousesCount, employeesCount, productsCount] = await Promise.all([
+            this.prisma.warehouses.count({
+                where: { organizationId },
+            }),
+            this.prisma.organization_Users.count({
+                where: { organizationId },
+            }),
+            this.prisma.products.count({
+                where: { organizationId },
+            }),
+        ]);
+
+        return {
+            organizationId: organization.organizationId,
+            name: organization.name,
+            createdAt: organization.createdAt,
+            warehousesCount,
+            employeesCount,
+            productsCount,
         };
     }
 }

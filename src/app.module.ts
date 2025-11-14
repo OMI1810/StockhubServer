@@ -9,6 +9,7 @@ import { MailModule } from './libs/mail/mail.module';
 import { EmailConfirmationModule } from './auth/email-confirmation/email-confirmation.module';
 import { OrganizationModule } from './organization/organization.module';
 import { WarehouseModule } from './warehouse/warehouse.module';
+import { NomenclatureModule } from './nomenclature/nomenclature.module';
 
 @Module({
   imports: [
@@ -22,7 +23,8 @@ import { WarehouseModule } from './warehouse/warehouse.module';
     MailModule,
     EmailConfirmationModule,
     OrganizationModule,
-    WarehouseModule
+    WarehouseModule,
+    NomenclatureModule
   ]
 })
 export class AppModule {}

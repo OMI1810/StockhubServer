@@ -64,4 +64,16 @@ export class OrganizationController {
 
     return organization;
   }
+
+  @OrganizationAuthorization()
+  @Get('stats')
+  @HttpCode(HttpStatus.OK)
+  public async getStatistics(
+    @Req() req: Request,
+    @Authorized('userId') userId: string,
+  ) {
+    // organizationId уже установлен в OrganizationRoleGuard
+    const organizationId = req.currentOrganizationId!;
+    return this.organizationService.getStatistics(organizationId);
+  }
 }

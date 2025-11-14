@@ -12,6 +12,7 @@ declare global {
             };
             organizationUser?: Organization_Users;
             jwtPayload?: JwtPayload; // Данные из JWT токена
+            currentOrganizationId?: string; // ID текущей организации (устанавливается OrganizationRoleGuard)
         }
     }
 }

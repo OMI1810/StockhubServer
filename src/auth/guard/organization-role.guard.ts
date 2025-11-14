@@ -62,6 +62,8 @@ export class OrganizationRoleGuard implements CanActivate {
         }
 
         request.organizationUser = organizationUser;
+        // Сохраняем organizationId в request для удобного доступа в контроллерах
+        request.currentOrganizationId = organizationId;
 
         return true;
     }
