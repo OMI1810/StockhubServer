@@ -28,6 +28,8 @@ model User{
 
   role               UserRole @default(REGULAR)
 
+  organizations      Organization_Users[] @relation("UserOrganizations")
+
   @@map("users")
 }
 
@@ -58,6 +60,11 @@ model Organization{
   name           String    @db.VarChar(255)     @map("name")
 
   createdBy      String                         @map("created_by") // user_id from User table 
+
+  users          Organization_Users[]   @relation("OrganizationUsers")
+  warehouses     Warehouses[]          @relation("OrganizationWarehouses")
+
+
   createdAt      DateTime  @default(now())      @map("created_at")
 
   @@map("organizations")
@@ -66,7 +73,10 @@ model Organization{
 model Organization_Users{
   organizationId String           @map("organization_id") // organization_id from Organization table
   userId         String           @map("user_id") // user_id from User table
-  role           OrganizationRole @default(WAREHOUSE_WORKER)
+  role           OrganizationRole 
+
+  organization   Organization @relation("OrganizationUsers", fields: [organizationId], references: [organizationId])
+  user           User         @relation("UserOrganizations", fields: [userId], references: [userId])
 
   @@id([organizationId, userId])
   @@map("organizations_users")
@@ -79,7 +89,7 @@ enum OrganizationRole{
 
 model Warehouses{
   warehouseId     String   @id @default(uuid()) @map("warehouse_id")
-  organizationId  Int      @map("organization_id") // organization_id from Organization table
+  organizationId  String   @map("organization_id") // organization_id from Organization table
 
   name            String   @db.VarChar(255)
   address         String   @db.VarChar(255)
@@ -89,6 +99,8 @@ model Warehouses{
   country         String   @db.VarChar(255)
   
   status   WarehouseStatus @default(ACTIVE) 
+
+  organization    Organization @relation("OrganizationWarehouses", fields: [organizationId], references: [organizationId])
 
   createdAt       DateTime @default(now()) @map("created_at")
 
@@ -122,7 +134,7 @@ model Nomenclature_Category{
 
 model Nomenklatury{
   nomenclatureId String   @id @default(uuid()) @map("nomenclature_id")
-  categoryId     Int      @map("category_id") // category_id from Nomenclature_Category table
+  categoryId     String   @map("category_id") // category_id from Nomenclature_Category table
   name           String   @db.VarChar(255)
 
   @@map("nomenklatury")
@@ -154,8 +166,8 @@ model Documents{
 model Documents_Products{
   documentProductId  String   @id @default(uuid()) @map("document_product_id")
 
-  documentId         Int      @map("document_id") // document_id from Documents table
-  productId          Int      @map("product_id") // product_id from Products table
+  documentId         String   @map("document_id") // document_id from Documents table
+  productId          String   @map("product_id") // product_id from Products table
 
   quantityExpected   Int      @map("quantity_expected")
   quantityChecked    Int      @map("quantity_checked")
@@ -165,12 +177,14 @@ model Documents_Products{
 }
 
 model Devices{
-  deviceId       Int      @id @default(autoincrement()) @map("device_id")
-  organizationId Int      @map("organization_id") // organization_id from Organization table
+  deviceId       String   @id @default(uuid()) @map("device_id")
+  organizationId String   @map("organization_id") // organization_id from Organization table
+
   deviceType     String   @db.VarChar(255) @map("device_type")
   deviceName     String   @db.VarChar(255) @map("device_name")
   qrToken        String   @db.VarChar(255) @map("qr_token")
-  assignedTo     Int      @map("assigned_to") // user_id from User table
+  assignedTo     String   @map("assigned_to") // user_id from User table
+  
   lastSynced     DateTime @updatedAt @map("last_synced")
   createdAt      DateTime @default(now()) @map("created_at")
 
@@ -178,11 +192,11 @@ model Devices{
 }
 
 model Scan_events{
-  scanEventId    Int      @id @default(autoincrement()) @map("scan_event_id")
-  documentId     Int      @map("document_id") // document_id from Documents table
-  productId      Int      @map("product_id") // product_id from Products table
-  userId         Int      @map("user_id") // user_id from User table
-  deviceId       Int      @map("device_id") // device_id from Devices table
+  scanEventId    String   @id @default(uuid()) @map("scan_event_id")
+  documentId     String   @map("document_id") // document_id from Documents table
+  productId      String   @map("product_id") // product_id from Products table
+  userId         String   @map("user_id") // user_id from User table
+  deviceId       String   @map("device_id") // device_id from Devices table
   quantityDelta  Int      @map("quantity_delta")
   scannedAt      DateTime @default(now()) @map("scanned_at")
   synced         Boolean  @default(false) @map("synced")
@@ -191,8 +205,8 @@ model Scan_events{
 }
 
 model Sync_logs{
-  syncLogId Int      @id @default(autoincrement()) @map("sync_log_id")
-  deviceId   Int      @map("device_id") // device_id from Devices table
+  syncLogId   String   @id @default(uuid()) @map("sync_log_id")
+  deviceId    String   @map("device_id") // device_id from Devices table
   direction   String   @db.VarChar(255)
   success     Boolean  
   syncTime    DateTime @default(now()) @map("sync_time")

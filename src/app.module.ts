@@ -7,6 +7,8 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { MailModule } from './libs/mail/mail.module';
 import { EmailConfirmationModule } from './auth/email-confirmation/email-confirmation.module';
+import { OrganizationModule } from './organization/organization.module';
+import { WarehouseModule } from './warehouse/warehouse.module';
 
 @Module({
   imports: [
@@ -18,7 +20,9 @@ import { EmailConfirmationModule } from './auth/email-confirmation/email-confirm
     AuthModule,
     UserModule,
     MailModule,
-    EmailConfirmationModule
+    EmailConfirmationModule,
+    OrganizationModule,
+    WarehouseModule
   ]
 })
 export class AppModule {}

@@ -15,7 +15,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const config = app.get(ConfigService);
-  const redis = new IORedis(config.getOrThrow<string>('REDIS_URL'));
+  
+  const redisUrl = config.get<string>('REDIS_URL') || 
+    `redis://:${config.getOrThrow<string>('REDIS_PASSWORD')}@${config.getOrThrow<string>('REDIS_HOST')}:${config.getOrThrow<number>('REDIS_PORT')}`;
+  
+  const redis = new IORedis(redisUrl);
   const redisSet = redis.set.bind(redis) as (...args: unknown[]) => Promise<unknown>;
   redis.set = ((...args: unknown[]) => {
     if (
