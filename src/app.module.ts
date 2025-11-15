@@ -15,7 +15,8 @@ import { NomenclatureModule } from './nomenclature/nomenclature.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      ignoreEnvFile: !IS_DEV_ENV,
+      envFilePath: '.env',
+      ignoreEnvFile: false,
       isGlobal: true
     }),
     PrismaModule,

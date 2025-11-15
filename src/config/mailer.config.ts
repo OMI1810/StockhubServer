@@ -14,8 +14,8 @@ export const getMailerConfig = async (
         port,
         secure: port === 465,
         auth: {
-          user: configService.getOrThrow('MAIL_LOGIN'),
-          pass: configService.getOrThrow('MAIL_PASSWORD'),
+          user: configService.getOrThrow('MAIL_USER'),
+          pass: configService.getOrThrow('MAIL_PASS'),
         },
       },
       defaults: {

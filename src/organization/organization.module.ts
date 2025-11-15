@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
 import { OrganizationController } from './organization.controller';
 import { OrganizationInvitationService } from './organization-invitation.service';
@@ -6,9 +6,10 @@ import { OrganizationInvitationController } from './organization-invitation.cont
 import { PrismaModule } from '@/prisma/prisma.module';
 import { UserModule } from '@/user/user.module';
 import { MailModule } from '@/libs/mail/mail.module';
+import { AuthModule } from '@/auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, UserModule, MailModule],
+  imports: [PrismaModule, forwardRef(() => UserModule), MailModule, forwardRef(() => AuthModule)],
   controllers: [OrganizationController, OrganizationInvitationController],
   providers: [OrganizationService, OrganizationInvitationService],
 })

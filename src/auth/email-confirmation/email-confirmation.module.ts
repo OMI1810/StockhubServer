@@ -6,7 +6,7 @@ import { AuthModule } from '@/auth/auth.module';
 import { UserModule } from '@/user/user.module';
 
 @Module({
-  imports: [MailModule, forwardRef(() => AuthModule), UserModule],
+  imports: [MailModule, forwardRef(() => AuthModule), forwardRef(() => UserModule)],
   controllers: [EmailConfirmationController],
   providers: [EmailConfirmationService],
   exports: [EmailConfirmationService],

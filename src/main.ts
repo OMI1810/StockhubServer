@@ -16,10 +16,31 @@ async function bootstrap() {
   const config = app.get(ConfigService);
   
   // Настройка подключения к Redis для хранения сессий
+  const redisPassword = config.get<string>('REDIS_PASSWORD') || '';
+  const redisHost = config.get<string>('REDIS_HOST') || 'localhost';
+  const redisPort = config.get<number>('REDIS_PORT') || 6379;
   const redisUrl = config.get<string>('REDIS_URL') || 
-    `redis://:${config.getOrThrow<string>('REDIS_PASSWORD')}@${config.getOrThrow<string>('REDIS_HOST')}:${config.getOrThrow<number>('REDIS_PORT')}`;
+    (redisPassword 
+      ? `redis://:${redisPassword}@${redisHost}:${redisPort}`
+      : `redis://${redisHost}:${redisPort}`);
   
-  const redis = new IORedis(redisUrl);
+  const redis = new IORedis(redisUrl, {
+    retryStrategy: (times) => {
+      // Не пытаемся переподключаться бесконечно
+      if (times > 3) {
+        return null; // Останавливаем попытки
+      }
+      return Math.min(times * 50, 2000);
+    },
+    maxRetriesPerRequest: null,
+    enableOfflineQueue: false,
+  });
+  
+  // Обработка ошибок подключения к Redis
+  redis.on('error', (err) => {
+    console.warn('Redis connection error:', err.message);
+    console.warn('Приложение будет работать, но сессии могут не сохраняться');
+  });
   // Обертка для метода set Redis для поддержки формата connect-redis
   const redisSet = redis.set.bind(redis) as (...args: unknown[]) => Promise<unknown>;
   redis.set = ((...args: unknown[]) => {
@@ -38,7 +59,7 @@ async function bootstrap() {
   }) as typeof redis.set;
 
   // Настройка cookie parser для работы с сессиями
-  app.use(cookieParser(config.getOrThrow<string>('COOKIE_SECRET')));
+  app.use(cookieParser(config.getOrThrow<string>('SESSION_SECRET')));
 
   // Глобальная валидация входящих данных через class-validator
   app.useGlobalPipes(
@@ -50,35 +71,35 @@ async function bootstrap() {
   // Настройка сессий с использованием Redis в качестве хранилища
   app.use(session({
     secret: config.getOrThrow<string>('SESSION_SECRET'),
-    name: config.getOrThrow<string>('SESSION_NAME'),
+    name: config.get<string>('SESSION_NAME') || 'stockhub.sid',
     resave: true,
     saveUninitialized: false,
     cookie: {
-      domain: config.getOrThrow<string>('SESSION_DOMAIN'),
-      maxAge: ms(config.getOrThrow<StringValude>('SESSION_MAX_AGE')),
+      domain: config.get<string>('SESSION_DOMAIN') || undefined,
+      maxAge: ms(config.get<StringValude>('SESSION_MAX_AGE') || '24h'),
       httpOnly: parseBoolean(
-        config.getOrThrow<string>('SESSION_HTTP_ONLY')
+        config.get<string>('SESSION_HTTP_ONLY') || 'true'
       ),
       secure: parseBoolean(
-        config.getOrThrow<string>('SESSION_SECURE')
+        config.get<string>('SESSION_SECURE') || 'false'
       ),
       sameSite: 'lax'
     },
     store: new RedisStore({
       client: redis,
-      prefix: config.getOrThrow<string>('SESSION_FOLDER')
+      prefix: config.get<string>('SESSION_FOLDER') || 'sess:'
     }),
   })
   )
 
   // Настройка CORS для работы с фронтендом
   app.enableCors({
-    origin: config.getOrThrow<string>('ALLOWED_ORIGIN'),
+    origin: config.get<string>('ALLOWED_ORIGIN') || '*',
     credentials: true,
     exposedHeaders: ['set-cookie'],
   });
 
   // Запуск сервера на указанном порту
-  await app.listen(config.getOrThrow<number>('APPLICATION_PORT'));
+  await app.listen(config.get<number>('APPLICATION_PORT') || config.get<number>('PORT') || 4000);
 }
 bootstrap();
