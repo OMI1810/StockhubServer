@@ -168,9 +168,7 @@ export class OrganizationService {
         };
     }
 
-    /**
-     * Получение статистики организации
-     */
+    // Получение статистики организации (количество складов, сотрудников, товаров)
     public async getStatistics(organizationId: string) {
         const organization = await this.prisma.organization.findUnique({
             where: { organizationId },

@@ -10,9 +10,7 @@ import { Request } from 'express';
 export class OrganizationInvitationController {
     constructor(private readonly invitationService: OrganizationInvitationService) {}
 
-    /**
-     * Создание приглашения пользователя в организацию
-     */
+    // Создание приглашения пользователя в организацию (для администратора)
     @OrganizationAuthorization(OrganizationRole.ADMIN)
     @Post()
     @HttpCode(HttpStatus.CREATED)
@@ -26,9 +24,7 @@ export class OrganizationInvitationController {
         return this.invitationService.createInvitation(organizationId, dto);
     }
 
-    /**
-     * Принятие приглашения
-     */
+    // Принятие приглашения (публичный эндпоинт, не требует авторизации)
     @Get('accept')
     @HttpCode(HttpStatus.OK)
     public async acceptInvitation(@Query('token') token: string) {

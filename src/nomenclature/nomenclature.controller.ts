@@ -11,9 +11,7 @@ import { Request } from 'express';
 export class NomenclatureController {
     constructor(private readonly nomenclatureService: NomenclatureService) {}
 
-    /**
-     * Создание категории номенклатуры
-     */
+    // Создание категории номенклатуры (для администратора)
     @OrganizationAuthorization(OrganizationRole.ADMIN)
     @Post('categories')
     @HttpCode(HttpStatus.CREATED)
@@ -27,9 +25,7 @@ export class NomenclatureController {
         return this.nomenclatureService.createCategory(organizationId, dto);
     }
 
-    /**
-     * Создание номенклатуры
-     */
+    // Создание номенклатуры (для администратора)
     @OrganizationAuthorization(OrganizationRole.ADMIN)
     @Post()
     @HttpCode(HttpStatus.CREATED)
@@ -43,9 +39,7 @@ export class NomenclatureController {
         return this.nomenclatureService.createNomenclature(organizationId, dto);
     }
 
-    /**
-     * Получение всех номенклатур организации
-     */
+    // Получение всех номенклатур организации (с опциональной фильтрацией по categoryId)
     @OrganizationAuthorization()
     @Get()
     @HttpCode(HttpStatus.OK)
@@ -59,9 +53,7 @@ export class NomenclatureController {
         return this.nomenclatureService.findAllNomenclatures(organizationId, categoryId);
     }
 
-    /**
-     * Получение всех категорий номенклатуры организации
-     */
+    // Получение всех категорий номенклатуры организации
     @OrganizationAuthorization()
     @Get('categories')
     @HttpCode(HttpStatus.OK)
@@ -74,9 +66,7 @@ export class NomenclatureController {
         return this.nomenclatureService.findAllCategories(organizationId);
     }
 
-    /**
-     * Получение категории по ID
-     */
+    // Получение категории по ID
     @OrganizationAuthorization()
     @Get('categories/:id')
     @HttpCode(HttpStatus.OK)
@@ -90,9 +80,7 @@ export class NomenclatureController {
         return this.nomenclatureService.findCategoryById(organizationId, categoryId);
     }
 
-    /**
-     * Получение номенклатуры по ID
-     */
+    // Получение номенклатуры по ID
     @OrganizationAuthorization()
     @Get(':id')
     @HttpCode(HttpStatus.OK)

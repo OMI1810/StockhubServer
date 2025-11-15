@@ -39,9 +39,7 @@ export class JwtAuthService {
         this.refreshTokenExpiresIn = 30 * 24 * 60 * 60; // 2592000 секунд
     }
 
-    /**
-     * Генерирует пару токенов (Access Token + Refresh Token)
-     */
+    // Генерирует пару токенов (Access Token + Refresh Token) и сохраняет Refresh Token в Redis
     public async generateTokenPair(user: User, currentOrganizationId?: string): Promise<TokenPair> {
         const payload: JwtPayload = {
             userId: user.userId,
@@ -77,10 +75,7 @@ export class JwtAuthService {
         };
     }
 
-    /**
-     * Обновляет Access Token используя Refresh Token
-     * Возвращает userId из refresh token для дальнейшей обработки в AuthService
-     */
+    // Валидирует Refresh Token и возвращает userId для дальнейшей обработки в AuthService
     public async validateRefreshTokenForRefresh(refreshToken: string): Promise<{ userId: string }> {
         const refreshTokenKey = `refresh_token:${refreshToken}`;
         const refreshTokenData = await this.redis.get(refreshTokenKey);
@@ -92,9 +87,7 @@ export class JwtAuthService {
         return JSON.parse(refreshTokenData);
     }
 
-    /**
-     * Генерирует новый Access Token для пользователя
-     */
+    // Генерирует новый Access Token для пользователя
     public generateAccessToken(user: User, currentOrganizationId?: string): string {
         const payload: JwtPayload = {
             userId: user.userId,
@@ -108,9 +101,7 @@ export class JwtAuthService {
         });
     }
 
-    /**
-     * Проверяет и декодирует Access Token
-     */
+    // Проверяет и декодирует Access Token
     public verifyAccessToken(token: string): JwtPayload {
         try {
             return this.jwtService.verify<JwtPayload>(token);
@@ -119,17 +110,13 @@ export class JwtAuthService {
         }
     }
 
-    /**
-     * Удаляет Refresh Token из Redis
-     */
+    // Удаляет Refresh Token из Redis (используется при выходе)
     public async revokeRefreshToken(refreshToken: string): Promise<void> {
         const refreshTokenKey = `refresh_token:${refreshToken}`;
         await this.redis.del(refreshTokenKey);
     }
 
-    /**
-     * Проверяет существование Refresh Token
-     */
+    // Проверяет существование Refresh Token в Redis
     public async validateRefreshToken(refreshToken: string): Promise<{ userId: string } | null> {
         const refreshTokenKey = `refresh_token:${refreshToken}`;
         const refreshTokenData = await this.redis.get(refreshTokenKey);

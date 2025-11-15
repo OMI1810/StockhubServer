@@ -14,9 +14,7 @@ export class OrganizationInvitationService {
         private readonly mailService: MailService,
     ) {}
 
-    /**
-     * Создание приглашения пользователя в организацию
-     */
+    // Создание приглашения пользователя в организацию
     public async createInvitation(organizationId: string, dto: InviteUserDto) {
         // Проверяем, что пользователь существует
         const user = await this.userService.findByEmail(dto.email);
@@ -108,9 +106,7 @@ export class OrganizationInvitationService {
         };
     }
 
-    /**
-     * Принятие приглашения
-     */
+    // Принятие приглашения пользователем
     public async acceptInvitation(token: string) {
         // Находим приглашение по токену
         const invitation = await this.prisma.invitations.findUnique({

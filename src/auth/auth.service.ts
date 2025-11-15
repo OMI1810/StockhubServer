@@ -90,9 +90,7 @@ export class AuthService {
         });
     }
 
-    /**
-     * Мобильная аутентификация - логин с JWT токенами
-     */
+    // Мобильная аутентификация - логин с JWT токенами (возвращает accessToken и refreshToken)
     public async mobileLogin(dto: LoginDto) {
         const user = await this.userService.findByEmail(dto.email);
 
@@ -128,9 +126,7 @@ export class AuthService {
         };
     }
 
-    /**
-     * Обновление Access Token через Refresh Token
-     */
+    // Обновление Access Token через Refresh Token
     public async refreshToken(refreshToken: string) {
         if (!refreshToken) {
             throw new BadRequestException('Refresh token не предоставлен.');
@@ -151,9 +147,7 @@ export class AuthService {
         };
     }
 
-    /**
-     * Мобильный выход - удаление Refresh Token
-     */
+    // Мобильный выход - удаление Refresh Token из базы данных
     public async mobileLogout(refreshToken: string): Promise<void> {
         if (!refreshToken) {
             throw new BadRequestException('Refresh token не предоставлен.');
@@ -162,10 +156,7 @@ export class AuthService {
         await this.jwtAuthService.revokeRefreshToken(refreshToken);
     }
 
-    /**
-     * Мобильная регистрация - возвращает токены после подтверждения email
-     * Пока возвращает только сообщение, токены выдаются после подтверждения
-     */
+    // Мобильная регистрация - создает пользователя и отправляет письмо для подтверждения email
     public async mobileRegister(dto: RegisterDto) {
         const isExists = await this.userService.findByEmail(dto.email);
 

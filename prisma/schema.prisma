@@ -8,18 +8,21 @@ datasource db {
 }
 
 model User {
-  userId             String   @id @default(uuid()) @map("user_id")
-  email              String   @unique
-  passwordHash       String   @map("password_hash") @db.VarChar(255)
-  isVerified         Boolean  @default(false)
-  isTwoFactorEnabled Boolean  @default(false) @map("is_two_factor_enabled")
-  firstName          String   @map("first_name") @db.VarChar(255)
-  middleName         String   @map("middle_name") @db.VarChar(255)
-  lastName           String   @map("last_name") @db.VarChar(255)
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
-  lastLogin          DateTime @updatedAt @map("last_login")
-  role               UserRole @default(REGULAR)
+  userId             String         @id @default(uuid()) @map("user_id")
+  email              String         @unique
+  passwordHash       String         @map("password_hash") @db.VarChar(255)
+  isVerified         Boolean        @default(false)
+  isTwoFactorEnabled Boolean        @default(false) @map("is_two_factor_enabled")
+  firstName          String         @map("first_name") @db.VarChar(255)
+  middleName         String         @map("middle_name") @db.VarChar(255)
+  lastName           String         @map("last_name") @db.VarChar(255)
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+  lastLogin          DateTime       @updatedAt @map("last_login")
+  role               UserRole       @default(REGULAR)
+
+  documents  Documents[]      @relation("UserDocuments")
+  scanEvents Scan_events[]    @relation("UserScanEvents")
 
   @@map("users")
 }
@@ -64,6 +67,7 @@ model Organization {
   nomenclatureCategories Nomenclature_Category[] @relation("OrganizationNomenclatureCategories")
   nomenclatures          Nomenklatury[]          @relation("OrganizationNomenclatures")
   invitations            Invitations[]           @relation("OrganizationInvitations")
+  documents              Documents[]              @relation("OrganizationDocuments")
 
   @@map("organizations")
 }
@@ -82,20 +86,23 @@ model Organization_Users {
 }
 
 model Warehouses {
-  warehouseId    String          @id @default(uuid()) @map("warehouse_id")
-  organizationId String          @map("organization_id")
-  name           String          @db.VarChar(255)
-  address        String          @db.VarChar(255)
-  city           String          @db.VarChar(255)
-  state          String          @db.VarChar(255)
-  zip            String          @db.VarChar(255)
-  country        String          @db.VarChar(255)
-  status         WarehouseStatus @default(ACTIVE)
-  createdAt      DateTime        @default(now()) @map("created_at")
+  warehouseId      String          @id @default(uuid()) @map("warehouse_id")
+  organizationId   String          @map("organization_id")
+  name             String          @db.VarChar(255)
+  address          String          @db.VarChar(255)
+  city             String          @db.VarChar(255)
+  state            String          @db.VarChar(255)
+  zip              String          @db.VarChar(255)
+  country          String          @db.VarChar(255)
+  status           WarehouseStatus @default(ACTIVE)
+  qrToken          String?         @unique @map("qr_token") @db.VarChar(255)
+  qrTokenExpiresIn DateTime?       @map("qr_token_expires_in")
+  createdAt        DateTime        @default(now()) @map("created_at")
 
   organization Organization         @relation("OrganizationWarehouses", fields: [organizationId], references: [organizationId])
   users        Organization_Users[] @relation("WarehouseUsers")
   invitations  Invitations[]        @relation("WarehouseInvitations")
+  documents    Documents[]          @relation("WarehouseDocuments")
 
   @@map("warehouses")
 }
@@ -105,10 +112,12 @@ model Products {
   organizationId String   @map("organization_id")
   name           String   @db.VarChar(255)
   sku            String   @db.VarChar(255)
-  barcode        String   @db.VarChar(255)
+  barcode        String   @unique @db.VarChar(255)
   createdAt      DateTime @default(now()) @map("created_at")
 
   nomenclatures Nomenklatury_Products[] @relation("ProductNomenclatures")
+  documents     Documents_Products[]     @relation("ProductDocuments")
+  scanEvents    Scan_events[]            @relation("ProductScanEvents")
 
   @@map("products")
 }
@@ -151,24 +160,35 @@ model Nomenklatury_Products {
 }
 
 model Documents {
-  documentId     String   @id @default(uuid()) @map("document_id")
-  organizationId String   @map("organization_id")
-  warehouseId    String   @map("warehouse_id")
-  documentStatus String   @map("document_status") @db.VarChar(255)
-  createdBy      String   @map("created_by")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  documentId     String         @id @default(uuid()) @map("document_id")
+  organizationId String         @map("organization_id")
+  warehouseId    String         @map("warehouse_id")
+  documentType   DocumentType   @default(INBOUND) @map("document_type")
+  documentStatus DocumentStatus @default(DRAFT) @map("document_status")
+  createdBy      String         @map("created_by")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  organization Organization         @relation("OrganizationDocuments", fields: [organizationId], references: [organizationId])
+  warehouse    Warehouses          @relation("WarehouseDocuments", fields: [warehouseId], references: [warehouseId])
+  creator      User                @relation("UserDocuments", fields: [createdBy], references: [userId])
+  products     Documents_Products[] @relation("DocumentProducts")
+  scanEvents   Scan_events[]       @relation("DocumentScanEvents")
 
   @@map("documents")
 }
 
 model Documents_Products {
   documentProductId String   @id @default(uuid()) @map("document_product_id")
-  documentId        Int      @map("document_id")
-  productId         Int      @map("product_id")
+  documentId        String   @map("document_id")
+  productId         String   @map("product_id")
   quantityExpected  Int      @map("quantity_expected")
-  quantityChecked   Int      @map("quantity_checked")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  quantityActual     Int?     @default(0) @map("quantity_actual")
+  quantityChecked    Int      @default(0) @map("quantity_checked")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  document Documents @relation("DocumentProducts", fields: [documentId], references: [documentId])
+  product  Products @relation("ProductDocuments", fields: [productId], references: [productId])
 
   @@map("documents_products")
 }
@@ -187,14 +207,16 @@ model Devices {
 }
 
 model Scan_events {
-  scanEventId   Int      @id @default(autoincrement()) @map("scan_event_id")
-  documentId    Int      @map("document_id")
-  productId     Int      @map("product_id")
-  userId        Int      @map("user_id")
-  deviceId      Int      @map("device_id")
-  quantityDelta Int      @map("quantity_delta")
+  scanEventId   String   @id @default(uuid()) @map("scan_event_id")
+  documentId    String   @map("document_id")
+  productId     String   @map("product_id")
+  userId        String   @map("user_id")
+  quantity      Int      @default(1)
   scannedAt     DateTime @default(now()) @map("scanned_at")
-  synced        Boolean  @default(false) @map("synced")
+
+  document Documents @relation("DocumentScanEvents", fields: [documentId], references: [documentId])
+  product   Products @relation("ProductScanEvents", fields: [productId], references: [productId])
+  user      User     @relation("UserScanEvents", fields: [userId], references: [userId])
 
   @@map("scan_events")
 }
@@ -229,4 +251,16 @@ enum OrganizationRole {
 enum WarehouseStatus {
   ACTIVE
   INACTIVE
+}
+
+enum DocumentStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum DocumentType {
+  INBOUND
+  OUTBOUND
 }

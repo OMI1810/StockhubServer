@@ -7,9 +7,7 @@ import { CreateNomenclatureDto } from './dto/create-nomenclature.dto';
 export class NomenclatureService {
     public constructor(private readonly prisma: PrismaService) {}
 
-    /**
-     * Создание категории номенклатуры для организации
-     */
+    // Создание категории номенклатуры для организации
     public async createCategory(organizationId: string, dto: CreateNomenclatureCategoryDto) {
         return this.prisma.nomenclature_Category.create({
             data: {
@@ -19,9 +17,7 @@ export class NomenclatureService {
         });
     }
 
-    /**
-     * Создание номенклатуры в категории
-     */
+    // Создание номенклатуры в категории
     public async createNomenclature(organizationId: string, dto: CreateNomenclatureDto) {
         // Проверяем, что категория существует и принадлежит организации
         const category = await this.prisma.nomenclature_Category.findUnique({
@@ -47,9 +43,7 @@ export class NomenclatureService {
         });
     }
 
-    /**
-     * Получение всех категорий номенклатуры организации
-     */
+    // Получение всех категорий номенклатуры организации
     public async findAllCategories(organizationId: string) {
         return this.prisma.nomenclature_Category.findMany({
             where: {
@@ -61,9 +55,7 @@ export class NomenclatureService {
         });
     }
 
-    /**
-     * Получение всех номенклатур организации
-     */
+    // Получение всех номенклатур организации (с опциональной фильтрацией по категории)
     public async findAllNomenclatures(organizationId: string, categoryId?: string) {
         const where: any = {
             organizationId,
@@ -104,9 +96,7 @@ export class NomenclatureService {
         });
     }
 
-    /**
-     * Получение категории по ID
-     */
+    // Получение категории по ID
     public async findCategoryById(organizationId: string, categoryId: string) {
         const category = await this.prisma.nomenclature_Category.findUnique({
             where: {
@@ -125,9 +115,7 @@ export class NomenclatureService {
         return category;
     }
 
-    /**
-     * Получение номенклатуры по ID
-     */
+    // Получение номенклатуры по ID
     public async findNomenclatureById(organizationId: string, nomenclatureId: string) {
         const nomenclature = await this.prisma.nomenklatury.findUnique({
             where: {

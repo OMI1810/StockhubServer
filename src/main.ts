@@ -13,13 +13,14 @@ import * as session from 'express-session';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
   const config = app.get(ConfigService);
   
+  // Настройка подключения к Redis для хранения сессий
   const redisUrl = config.get<string>('REDIS_URL') || 
     `redis://:${config.getOrThrow<string>('REDIS_PASSWORD')}@${config.getOrThrow<string>('REDIS_HOST')}:${config.getOrThrow<number>('REDIS_PORT')}`;
   
   const redis = new IORedis(redisUrl);
+  // Обертка для метода set Redis для поддержки формата connect-redis
   const redisSet = redis.set.bind(redis) as (...args: unknown[]) => Promise<unknown>;
   redis.set = ((...args: unknown[]) => {
     if (
@@ -36,15 +37,17 @@ async function bootstrap() {
     return redisSet(...args);
   }) as typeof redis.set;
 
+  // Настройка cookie parser для работы с сессиями
   app.use(cookieParser(config.getOrThrow<string>('COOKIE_SECRET')));
 
+  // Глобальная валидация входящих данных через class-validator
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
     }),
   );
 
-
+  // Настройка сессий с использованием Redis в качестве хранилища
   app.use(session({
     secret: config.getOrThrow<string>('SESSION_SECRET'),
     name: config.getOrThrow<string>('SESSION_NAME'),
@@ -68,12 +71,14 @@ async function bootstrap() {
   })
   )
 
+  // Настройка CORS для работы с фронтендом
   app.enableCors({
     origin: config.getOrThrow<string>('ALLOWED_ORIGIN'),
     credentials: true,
     exposedHeaders: ['set-cookie'],
   });
 
+  // Запуск сервера на указанном порту
   await app.listen(config.getOrThrow<number>('APPLICATION_PORT'));
 }
 bootstrap();
